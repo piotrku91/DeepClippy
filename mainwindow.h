@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QClipboard>
+#include <QCloseEvent>
 #include "clipboardcontainer.h"
 
 #ifndef QT_NO_SYSTEMTRAYICON
@@ -27,6 +28,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
     ClipboardContainer clipboard_container;
@@ -34,14 +38,14 @@ private:
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
     QMenu *lastMenu;
-
-    QAction *minimizeAction;
-    QAction *maximizeAction;
+    QAction *saveAction;
+    QAction *clearAction;
     QAction *restoreAction;
     QAction *quitAction;
 
-    QList<QAction*> entryAction;
     QClipboard *clipboard;
+
+    void historyCounterUpdate();
 
 public slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

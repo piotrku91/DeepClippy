@@ -6,7 +6,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow), entryAction(64)
+    ,ui(new Ui::MainWindow), clipboard_container(this)
 {
     ui->setupUi(this);
     createActions();
@@ -30,6 +30,7 @@ void MainWindow::dataChanged()
         clipboard_container.addData(new_action, mimeData->text());
         lastMenu->clear();
         lastMenu->addActions(clipboard_container.getActions());
+        historyCounterUpdate();
     }
 }
 
@@ -44,18 +45,31 @@ void MainWindow::entryTriggered()
 
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    hide();
+    event->ignore();
+}
+
+void MainWindow::historyCounterUpdate()
+{
+    lastMenu->setTitle("History ("+QString::number(clipboard_container.getActions().size())+")");
+}
+
 void MainWindow::createTray()
 {
     trayIconMenu = new QMenu(this);
     lastMenu = new QMenu(this);
 
-    lastMenu->setTitle("Last");
     lastMenu->clear();
     lastMenu->addActions(clipboard_container.getActions());
 
+    historyCounterUpdate();
     trayIconMenu->addMenu(lastMenu);
     trayIconMenu->addSeparator();
-    trayIconMenu->addAction(minimizeAction);
+    trayIconMenu->addAction(clearAction);
+    trayIconMenu->addAction(saveAction);
+    trayIconMenu->addSeparator();
     trayIconMenu->addAction(restoreAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(quitAction);
@@ -71,6 +85,7 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
     switch (reason) {
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:{
+        showNormal();
         break;
     }
     case QSystemTrayIcon::MiddleClick:
@@ -82,10 +97,26 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::createActions()
 {
-    minimizeAction = new QAction(tr("Mi&nimize"), this);
-    connect(minimizeAction, &QAction::triggered, this, &QWidget::hide);
+    clearAction = new QAction(tr("Clear history"), this);
+    connect(clearAction, &QAction::triggered, this, [this](){
 
-    restoreAction = new QAction(tr("&Settings"), this);
+        for (auto& entry: clipboard_container.getActions())
+        {
+            disconnect(entry, &QAction::triggered, this, &MainWindow::entryTriggered);
+        }
+
+        clipboard_container.clear();
+        lastMenu->clear();
+        historyCounterUpdate();
+    }
+    );
+
+    saveAction = new QAction(tr("&Save history"), this);
+    connect(saveAction, &QAction::triggered, this,  [this](){
+        clipboard_container.saveToFile();
+    });
+
+    restoreAction = new QAction(tr("&About"), this);
     connect(restoreAction, &QAction::triggered, this, &QWidget::showNormal);
 
     quitAction = new QAction(tr("&Quit app"), this);
@@ -95,7 +126,7 @@ void MainWindow::createActions()
 void MainWindow::setIcon()
 {
     Q_INIT_RESOURCE(general);
-    QIcon icon(":/icons/heart.png");
+    QIcon icon(":/icons/notebook.png");
     trayIcon->setIcon(icon);
     setWindowIcon(icon);
 }
