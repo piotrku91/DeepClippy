@@ -6,7 +6,10 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    ,ui(new Ui::MainWindow), clipboard_container(this)
+    , ui(new Ui::MainWindow)
+    , clipboard_container(this)
+    , autoSaver(new QTimer(this))
+    , settings(QSettings("PiotrQ Soft", "DeepClippy"))
 {
     ui->setupUi(this);
     createActions();
@@ -17,6 +20,26 @@ MainWindow::MainWindow(QWidget *parent)
     clipboard = QGuiApplication::clipboard();
 
     connect(clipboard, &QClipboard::dataChanged, this, &MainWindow::dataChanged);
+
+    connect(autoSaver, &QTimer::timeout, &clipboard_container, &ClipboardContainer::saveToFile);
+    connect(ui->autobackup_checkbox, &QCheckBox::stateChanged, this, [this](auto state){
+        if (state) {
+            autoSaver->start(1000 * 60 * 60);
+        } else
+        {
+            autoSaver->stop();
+        }
+
+    });
+    connect(qApp, &QCoreApplication::aboutToQuit, this, [this](){
+        saveAppSettings();
+        if (ui->autobackup_checkbox_2->isChecked()) {
+        clipboard_container.saveToFile();
+        };
+
+    });
+
+    readAppSettings();
 }
 
 void MainWindow::dataChanged()
@@ -37,7 +60,6 @@ void MainWindow::dataChanged()
 void MainWindow::entryTriggered()
 {
     QAction* action = qobject_cast<QAction*>(sender());
-
     if (action)
     {
         clipboard->setText(clipboard_container.getLongDataStr(action), QClipboard::Clipboard);
@@ -54,6 +76,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::historyCounterUpdate()
 {
     lastMenu->setTitle("History ("+QString::number(clipboard_container.getActions().size())+")");
+}
+
+void MainWindow::saveAppSettings()
+{
+    settings.beginGroup("Main settings");
+    settings.setValue("autobackup_hour", ui->autobackup_checkbox->isChecked());
+    settings.setValue("autobackup_app_close", ui->autobackup_checkbox_2->isChecked());
+    settings.endGroup();
+}
+
+void MainWindow::readAppSettings()
+{
+     settings.beginGroup("Main settings");
+     ui->autobackup_checkbox->setChecked(settings.value("autobackup_hour").toBool());
+     ui->autobackup_checkbox_2->setChecked(settings.value("autobackup_app_close").toBool());
+     settings.endGroup();
 }
 
 void MainWindow::createTray()
@@ -116,7 +154,7 @@ void MainWindow::createActions()
         clipboard_container.saveToFile();
     });
 
-    restoreAction = new QAction(tr("&About"), this);
+    restoreAction = new QAction(tr("&Settings"), this);
     connect(restoreAction, &QAction::triggered, this, &QWidget::showNormal);
 
     quitAction = new QAction(tr("&Quit app"), this);

@@ -5,7 +5,9 @@
 #include <QSystemTrayIcon>
 #include <QClipboard>
 #include <QCloseEvent>
-#include "clipboardcontainer.h"
+#include "ClipboardContainer.h"
+#include <QTimer>
+#include <QSettings>
 
 #ifndef QT_NO_SYSTEMTRAYICON
 
@@ -42,10 +44,13 @@ private:
     QAction *clearAction;
     QAction *restoreAction;
     QAction *quitAction;
-
+    QTimer *autoSaver;
     QClipboard *clipboard;
+    QSettings settings;
 
     void historyCounterUpdate();
+    void saveAppSettings();
+    void readAppSettings();
 
 public slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);

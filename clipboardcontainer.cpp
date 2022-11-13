@@ -4,9 +4,10 @@
 
 void ClipboardContainer::saveToFile()
 {
+    if (entryAction.isEmpty()) {return;};
     QDateTime date_time(QDateTime::currentDateTime());
 
-    QFile file("clipboard_backup_"
+    QFile file("dumps/clipboard_dump_"
                +QString::number(date_time.date().year())
                +QString::number(date_time.date().month())
                +QString::number(date_time.date().day())

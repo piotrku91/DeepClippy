@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
 
+set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/DeepClippy.rc")
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
@@ -26,6 +28,7 @@ set(PROJECT_SOURCES
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(DeepClippy
+        ${app_icon_resource_windows}
         general.qrc
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
